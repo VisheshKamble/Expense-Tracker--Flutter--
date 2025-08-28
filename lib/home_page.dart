@@ -49,6 +49,7 @@ class _HomePageState extends State<HomePage> {
         .calculateCurrentMonthTotal();
   }
 
+  /// ---- Expense Dialog ----
   void _openExpenseDialog({Expense? existingExpense}) {
     final isEdit = existingExpense != null;
     if (isEdit) {
@@ -63,89 +64,110 @@ class _HomePageState extends State<HomePage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isEdit ? 'Edit Expense' : 'New Expense',
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                hintText: "Name",
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(isEdit ? 'Edit Expense' : 'Add Expense',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      )),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: "Expense Name",
+                  prefixIcon: const Icon(Icons.note_alt_outlined),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: amountController,
-              decoration: InputDecoration(
-                hintText: "Amount",
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+              const SizedBox(height: 12),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: "Amount",
+                  prefixIcon: const Icon(Icons.currency_rupee),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
               ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: selectedCategory,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: Colors.grey.shade100,
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedCategory,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.category),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
+                items: categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() => selectedCategory = val ?? 'Food');
+                },
               ),
-              items: categories
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (val) {
-                setState(() => selectedCategory = val ?? 'Food');
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel",
-                  style: TextStyle(color: Colors.deepPurple))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final amount = convertStringToDouble(amountController.text);
-              if (name.isEmpty || amount <= 0) return;
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    child: const Text("Cancel",
+                        style: TextStyle(color: Colors.deepPurple)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.save, size: 18),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                    ),
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      final amount = convertStringToDouble(amountController.text);
+                      if (name.isEmpty || amount <= 0) return;
 
-              final newExpense = Expense(
-                name: name,
-                amount: amount,
-                date: DateTime.now(),
-                category: selectedCategory,
-              );
+                      final newExpense = Expense(
+                        name: name,
+                        amount: amount,
+                        date: DateTime.now(),
+                        category: selectedCategory,
+                      );
 
-              if (isEdit) {
-                await context
-                    .read<ExpenseDatabase>()
-                    .updateExpense(existingExpense!.id, newExpense);
-              } else {
-                await context.read<ExpenseDatabase>().createNewExpense(newExpense);
-              }
-              refreshData();
-              Navigator.pop(context);
-            },
-            child: const Text("Save", style: TextStyle(color: Colors.white)),
+                      if (isEdit) {
+                        await context
+                            .read<ExpenseDatabase>()
+                            .updateExpense(existingExpense!.id, newExpense);
+                      } else {
+                        await context
+                            .read<ExpenseDatabase>()
+                            .createNewExpense(newExpense);
+                      }
+                      refreshData();
+                      Navigator.pop(context);
+                    },
+                    label: const Text("Save",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              )
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -154,16 +176,17 @@ class _HomePageState extends State<HomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Delete Expense?"),
+        content: const Text(
+            "Are you sure you want to delete this expense? This action cannot be undone."),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel",
-                  style: TextStyle(color: Colors.deepPurple))),
+              child: const Text("Cancel")),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
+              backgroundColor: Colors.redAccent,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -179,6 +202,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// ---- BUILD UI ----
   @override
   Widget build(BuildContext context) {
     return Consumer<ExpenseDatabase>(
@@ -187,71 +211,78 @@ class _HomePageState extends State<HomePage> {
         final startYear = db.getStartYear();
         final now = DateTime.now();
         final monthCount =
-        calculateMonthCount(startYear, startMonth, now.year, now.month);
+            calculateMonthCount(startYear, startMonth, now.year, now.month);
         final currentExpenses = db.currentMonthExpenses;
 
         return Scaffold(
+          extendBodyBehindAppBar: true,
           appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
             title: FutureBuilder<double>(
               future: _calculateCurrentMonthTotal,
               builder: (context, snapshot) {
                 final total = snapshot.data ?? 0.0;
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text("This Month",
+                        style: Theme.of(context).textTheme.bodySmall),
                     Text('₹${total.toStringAsFixed(2)}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 20)),
-                    Text(getCurrentMonthName(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18)),
                   ],
                 );
               },
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.pie_chart),
+                icon: const Icon(Icons.pie_chart_outline_rounded),
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) => AlertDialog(
+                    builder: (context) => Dialog(
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20)),
-                      title: const Text('Category Breakdown'),
-                      content: SizedBox(
-                        height: 300,
-                        width: 300,
-                        child: FutureBuilder<Map<String, double>>(
-                          future: _categoryTotalsFuture,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                            final data = snapshot.data!;
-                            if (data.isEmpty) {
-                              return const Text('No expenses yet.');
-                            }
-                            return PieChart(
-                              PieChartData(
-                                sections: data.entries.map((entry) {
-                                  final color = _getCategoryColor(entry.key);
-                                  return PieChartSectionData(
-                                    value: entry.value,
-                                    title:
-                                    '${entry.key}\n₹${entry.value.toStringAsFixed(0)}',
-                                    color: color,
-                                    radius: 100,
-                                    titleStyle: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
-                                  );
-                                }).toList(),
-                              ),
-                            );
-                          },
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: SizedBox(
+                          height: 320,
+                          width: 320,
+                          child: FutureBuilder<Map<String, double>>(
+                            future: _categoryTotalsFuture,
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              final data = snapshot.data!;
+                              if (data.isEmpty) {
+                                return const Center(
+                                    child: Text('No expenses yet.'));
+                              }
+                              return PieChart(
+                                PieChartData(
+                                  sectionsSpace: 2,
+                                  centerSpaceRadius: 40,
+                                  sections: data.entries.map((entry) {
+                                    final color = _getCategoryColor(entry.key);
+                                    return PieChartSectionData(
+                                      value: entry.value,
+                                      title:
+                                          '${entry.key}\n₹${entry.value.toStringAsFixed(0)}',
+                                      color: color,
+                                      radius: 100,
+                                      titleStyle: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -261,56 +292,82 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           floatingActionButton: FloatingActionButton(
+            backgroundColor: Colors.deepPurple,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             onPressed: () => _openExpenseDialog(),
-            child: const Icon(Icons.add),
+            child: const Icon(Icons.add, size: 28),
           ),
           body: SafeArea(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 250,
-                  child: FutureBuilder<Map<String, double>>(
-                    future: _monthlyTotalsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState != ConnectionState.done) {
-                        return const Center(
-                            child: CircularProgressIndicator());
-                      }
-                      final monthlySummary = List.generate(
-                        monthCount,
-                            (i) {
-                          final year = startYear + (startMonth + i - 1) ~/ 12;
-                          final month = (startMonth + i - 1) % 12 + 1;
-                          final key =
-                              '$year-${month.toString().padLeft(2, '0')}';
-                          return snapshot.data?[key] ?? 0.0;
-                        },
-                      );
-                      return MyBarGraph(
-                        monthlySummary: monthlySummary,
-                        startMonth: startMonth,
-                      );
-                    },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  /// ---- Monthly Summary ----
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: SizedBox(
+                        height: 220,
+                        child: FutureBuilder<Map<String, double>>(
+                          future: _monthlyTotalsFuture,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                            final monthlySummary = List.generate(
+                              monthCount,
+                              (i) {
+                                final year =
+                                    startYear + (startMonth + i - 1) ~/ 12;
+                                final month =
+                                    (startMonth + i - 1) % 12 + 1;
+                                final key =
+                                    '$year-${month.toString().padLeft(2, '0')}';
+                                return snapshot.data?[key] ?? 0.0;
+                              },
+                            );
+                            return MyBarGraph(
+                              monthlySummary: monthlySummary,
+                              startMonth: startMonth,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: currentExpenses.length,
-                    itemBuilder: (context, index) {
-                      final expense = currentExpenses[index];
-                      return MyListTile(
-                        title: expense.name,
-                        trailing: formatAmount(expense.amount),
-                        category: expense.category,
-                        onEditPressed: (_) =>
-                            _openExpenseDialog(existingExpense: expense),
-                        onDeletePressed: (_) => _confirmDelete(expense),
-                      );
-                    },
+                  const SizedBox(height: 20),
+
+                  /// ---- Expense List ----
+                  Expanded(
+                    child: currentExpenses.isEmpty
+                        ? const Center(
+                            child: Text("No expenses yet.",
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.grey)))
+                        : ListView.separated(
+                            itemCount: currentExpenses.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final expense = currentExpenses[index];
+                              return MyListTile(
+                                title: expense.name,
+                                trailing: formatAmount(expense.amount),
+                                category: expense.category,
+                                onEditPressed: (_) => _openExpenseDialog(
+                                    existingExpense: expense),
+                                onDeletePressed: (_) => _confirmDelete(expense),
+                              );
+                            },
+                          ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -318,20 +375,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// ---- CATEGORY COLORS ----
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'Food':
-        return Colors.green;
+        return Colors.green.shade400;
       case 'Travel':
-        return Colors.blue;
+        return Colors.blue.shade400;
       case 'Entertainment':
-        return Colors.orange;
+        return Colors.orange.shade400;
       case 'Bills':
-        return Colors.red;
+        return Colors.red.shade400;
       case 'Shopping':
-        return Colors.purple;
+        return Colors.purple.shade400;
       default:
-        return Colors.grey;
+        return Colors.grey.shade400;
     }
   }
 }
