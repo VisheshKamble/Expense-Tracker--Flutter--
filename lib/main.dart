@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/home_page.dart';
 import 'package:expense_tracker/expense_database.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await ExpenseDatabase.initialize();
   runApp(const MyApp());
 }
