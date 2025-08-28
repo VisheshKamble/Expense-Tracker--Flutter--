@@ -5,7 +5,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 class MyListTile extends StatelessWidget {
   final String title;
   final String trailing;
-  final String category; // New: Added category
+  final String? category; // nullable to avoid breakdown crash
   final void Function(BuildContext)? onEditPressed;
   final void Function(BuildContext)? onDeletePressed;
 
@@ -13,21 +13,21 @@ class MyListTile extends StatelessWidget {
     super.key,
     required this.title,
     required this.trailing,
-    required this.category,
+    this.category,
     required this.onEditPressed,
     required this.onDeletePressed,
   });
 
-  IconData _getCategoryIcon() {
+  IconData _getCategoryIcon(String? category) {
     switch (category) {
       case 'Food':
         return Icons.fastfood;
       case 'Travel':
-        return Icons.flight;
+        return Icons.flight_takeoff;
       case 'Entertainment':
         return Icons.movie;
       case 'Bills':
-        return Icons.receipt;
+        return Icons.receipt_long;
       case 'Shopping':
         return Icons.shopping_bag;
       default:
@@ -35,7 +35,7 @@ class MyListTile extends StatelessWidget {
     }
   }
 
-  Color _getCategoryColor() {
+  Color _getCategoryColor(String? category) {
     switch (category) {
       case 'Food':
         return Colors.green.shade400;
@@ -55,7 +55,7 @@ class MyListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Slidable(
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
@@ -80,40 +80,54 @@ class MyListTile extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.white,
+            gradient: LinearGradient(
+              colors: [
+                Colors.white,
+                Colors.grey.shade100,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             leading: CircleAvatar(
-              backgroundColor: _getCategoryColor(),
-              child: Icon(_getCategoryIcon(), color: Colors.white),
+              radius: 25,
+              backgroundColor: _getCategoryColor(category),
+              child: Icon(
+                _getCategoryIcon(category),
+                color: Colors.white,
+                size: 22,
+              ),
             ),
             title: Text(
               title,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
             ),
             subtitle: Text(
-              category,
+              category ?? "Uncategorized",
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
               ),
             ),
             trailing: Text(
               trailing,
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.deepPurple,
               ),
@@ -124,3 +138,4 @@ class MyListTile extends StatelessWidget {
     );
   }
 }
+
